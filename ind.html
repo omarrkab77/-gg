@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منظم الجدول الجامعي</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Cairo',sans-serif; }
+  body {
+    min-height:100vh;
+    background: linear-gradient(135deg,#0d324a 0%,#071c2b 100%);
+    background-attachment: fixed;
+    padding: 20px;
+    color:#fff;
+  }
+  .app-header { text-align:center; margin-bottom:24px; }
+  .app-header h1 { font-size:1.7rem; font-weight:900; }
+  .app-header p { color:#cba358; font-weight:600; }
+  .layout {
+    display:grid;
+    grid-template-columns: 380px 1fr;
+    gap:24px;
+    max-width:1200px;
+    margin:0 auto;
+    align-items:start;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* ====== لوحة الإدخال ====== */
+  .panel {
+    background: rgba(255,255,255,0.06);
+    border:1px solid rgba(203,163,88,0.35);
+    border-radius:16px;
+    padding:20px;
+    backdrop-filter: blur(6px);
+  }
+  .panel h2 {
+    font-size:1.15rem; font-weight:800; color:#d6b265;
+    margin-bottom:14px; display:flex; align-items:center; gap:8px;
+  }
+  label { display:block; font-size:.85rem; font-weight:700; margin:12px 0 5px; color:#e8dcc3; }
+  input, select {
+    width:100%; padding:10px 12px; border-radius:10px;
+    border:1px solid rgba(203,163,88,0.4);
+    background: rgba(255,255,255,0.92);
+    font-family:'Cairo',sans-serif; font-size:.95rem; font-weight:600;
+    color:#123; outline:none; transition:border .2s;
+  }
+  input:focus, select:focus { border-color:#d6b265; box-shadow:0 0 0 3px rgba(214,178,101,.25); }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .btn {
+    width:100%; margin-top:16px; padding:12px; border:none; border-radius:12px;
+    font-family:'Cairo',sans-serif; font-size:1rem; font-weight:800; cursor:pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn:active { transform:scale(.97); }
+  .btn-add { background: linear-gradient(135deg,#b88c3e,#d6b265); color:#1b1405; }
+  .btn-add:hover { box-shadow:0 6px 18px rgba(214,178,101,.4); }
+  .btn-danger { background:#8f2b2b; color:#fff; margin-top:10px; font-size:.9rem; }
+  .btn-danger:hover { background:#a83232; }
+
+  .lecture-list { margin-top:16px; max-height:260px; overflow-y:auto; }
+  .lecture-item {
+    display:flex; justify-content:space-between; align-items:center;
+    background: rgba(255,255,255,0.08); border:1px solid rgba(203,163,88,.25);
+    border-radius:10px; padding:8px 12px; margin-bottom:8px; font-size:.85rem;
+  }
+  .lecture-item .del {
+    background:none; border:none; color:#ff9a9a; cursor:pointer; font-size:1.05rem;
+    font-family:'Cairo'; font-weight:800; padding:0 6px;
+  }
+  .lecture-item .del:hover { color:#ff6b6b; }
+
+  /* ====== بطاقة المعاينة ====== */
+  .preview-wrap { display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .card {
+    width:100%; max-width:420px;
+    background: linear-gradient(165deg,#0d324a 0%,#071c2b 100%);
+    border:2px solid rgba(214,178,101,.55);
+    border-radius:22px;
+    padding:26px 20px 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.45);
+    position:relative; overflow:hidden;
+  }
+  .card::before {
+    content:''; position:absolute; inset:6px; border-radius:16px;
+    border:1px solid rgba(214,178,101,.25); pointer-events:none;
+  }
+  .card-head { text-align:center; margin-bottom:20px; position:relative; z-index:1; }
+  .card-head svg { width:52px; height:52px; margin-bottom:8px; }
+  .card-title { color:#fff; font-size:1.35rem; font-weight:900; letter-spacing:.3px; }
+  .card-sub { color:#cba358; font-size:.95rem; font-weight:700; margin-top:2px; }
+
+  .day-block { margin-bottom:16px; position:relative; z-index:1; }
+  .day-title {
+    background: linear-gradient(90deg,#b88c3e,#d6b265);
+    color:#fff; text-align:center; font-weight:800; font-size:1rem;
+    border-radius:50px; padding:6px 18px; width:fit-content;
+    margin:0 auto 12px; min-width:140px;
+    box-shadow:0 3px 10px rgba(184,140,62,.4);
+  }
+  .lecture-card {
+    background:#fff; border-radius:14px;
+    display:flex; align-items:center; gap:10px;
+    padding:10px 12px; margin-bottom:9px;
+    box-shadow:0 4px 12px rgba(0,0,0,.25);
+  }
+  .time-box {
+    border:1.5px solid #b88c3e; border-radius:10px;
+    padding:4px 8px; text-align:center; min-width:78px;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    flex-shrink:0;
+  }
+  .time-box svg { width:16px; height:16px; }
+  .time-box .t { font-size:.72rem; font-weight:800; color:#123; line-height:1.3; }
+  .lec-info { flex:1; min-width:0; }
+  .lec-name { font-weight:900; color:#111; font-size:.95rem; display:flex; align-items:center; gap:5px; }
+  .lec-name .star { color:#b88c3e; font-size:.8rem; }
+  .lec-type { color:#8a6a2c; font-weight:700; font-size:.78rem; }
+  .lec-cat { flex-shrink:0; text-align:left; }
+  .lec-cat span {
+    background: rgba(184,140,62,.14); color:#8a6a2c;
+    border:1px solid rgba(184,140,62,.45);
+    border-radius:8px; padding:3px 9px;
+    font-size:.72rem; font-weight:800; display:inline-block;
+  }
+  .empty-msg { text-align:center; color:#9db4c4; font-weight:700; padding:20px 0; }
+
+  .btn-download {
+    background: linear-gradient(135deg,#1f7a4d,#2ea86e);
+    color:#fff; border:none; padding:13px 30px; border-radius:14px;
+    font-family:'Cairo'; font-size:1.05rem; font-weight:900; cursor:pointer;
+    box-shadow:0 8px 22px rgba(46,168,110,.35);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-download:hover { box-shadow:0 12px 28px rgba(46,168,110,.5); transform:translateY(-2px); }
+  .btn-download:active { transform:scale(.97); }
+  .btn-download:disabled { opacity:.6; cursor:wait; transform:none; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>🎓 منظم ومولّد جدول الدوام الجامعي</h1>
+  <p>صمّم جدولك وأعدّه بصورة أنيقة جاهزة للمشاركة</p>
+</div>
+
+<div class="layout">
+
+  <!-- القسم الأول: لوحة الإدخال -->
+  <div class="panel">
+    <h2>📝 إعدادات الجدول</h2>
+    <label>العنوان الرئيسي</label>
+    <input type="text" id="mainTitle" value="البرنامج الأسبوعي للدوام">
+    <label>العنوان الفرعي</label>
+    <input type="text" id="subTitle" value="كلية طب الأسنان">
+
+    <h2 style="margin-top:22px;">➕ إضافة محاضرة</h2>
+    <label>اليوم</label>
+    <select id="day">
+      <option>السبت</option><option>الأحد</option><option>الاثنين</option>
+      <option>الثلاثاء</option><option>الأربعاء</option><option>الخميس</option>
+    </select>
+    <div class="row">
+      <div><label>وقت البداية</label><input type="text" id="timeStart" placeholder="8:30"></div>
+      <div><label>وقت النهاية</label><input type="text" id="timeEnd" placeholder="10:00"></div>
+    </div>
+    <label>اسم المادة</label>
+    <input type="text" id="subject" placeholder="تقويم 2">
+    <label>النوع / الشعبة / الفئة</label>
+    <input type="text" id="type" placeholder="نظري">
+    <button class="btn btn-add" onclick="addLecture()">إضافة للجدول ✦</button>
+
+    <h2 style="margin-top:22px;">📋 المحاضرات المضافة</h2>
+    <div class="lecture-list" id="lectureList"></div>
+    <button class="btn btn-danger" onclick="clearAll()">مسح الكل</button>
+  </div>
+
+  <!-- القسم الثاني: المعاينة الحية -->
+  <div class="preview-wrap">
+    <div class="card" id="card">
+      <div class="card-head">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M32 10 L58 22 L32 34 L6 22 Z" fill="#d6b265"/>
+          <path d="M16 28 V42 C16 47 23 52 32 52 C41 52 48 47 48 42 V28 L32 35 Z" fill="#b88c3e"/>
+          <rect x="52" y="24" width="4" height="16" rx="2" fill="#d6b265"/>
+          <circle cx="54" cy="42" r="3.5" fill="#d6b265"/>
+          <path d="M32 10 L58 22 L32 34 L6 22 Z" stroke="#cba358" stroke-width="1"/>
+        </svg>
+        <div class="card-title" id="cardTitle">البرنامج الأسبوعي للدوام</div>
+        <div class="card-sub" id="cardSub">كلية طب الأسنان</div>
+      </div>
+      <div id="scheduleBody"></div>
+    </div>
+    <button class="btn-download" id="dlBtn" onclick="downloadImage()">⬇️ تحميل الجدول كصورة للموبايل (PNG)</button>
+  </div>
+</div>
+
+<script>
+const DAYS = ["السبت","الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس"];
+let lectures = [
+  {id:1, day:"السبت",  start:"8:30", end:"10:00", subject:"تقويم 2", type:"شعبة 1"},
+  {id:2, day:"السبت",  start:"10:30", end:"12:00", subject:"ثابتة 3", type:"نظري"},
+  {id:3, day:"الأحد",  start:"9:00", end:"11:00", subject:"جراحة فموية صغرى", type:"عملي"},
+  {id:4, day:"الثلاثاء", start:"8:00", end:"9:30", subject:"أشعة فموية", type:"فئة 3"},
+  {id:5, day:"الخميس", start:"11:00", end:"12:30", subject:"مختبر الأسنان", type:"عملي"}
+];
+let nextId = 6;
+
+const clockSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="#b88c3e" stroke-width="2" stroke-linecap="round">
+  <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
+
+function render() {
+  document.getElementById('cardTitle').textContent = document.getElementById('mainTitle').value || 'البرنامج الأسبوعي للدوام';
+  document.getElementById('cardSub').textContent   = document.getElementById('subTitle').value || 'كلية طب الأسنان';
+
+  const body = document.getElementById('scheduleBody');
+  body.innerHTML = '';
+  let hasAny = false;
+
+  DAYS.forEach(day => {
+    const dayLecs = lectures.filter(l => l.day === day)
+                            .sort((a,b) => toMin(a.start) - toMin(b.start));
+    if (dayLecs.length === 0) return;   // إخفاء الأيام الفارغة
+    hasAny = true;
+
+    const block = document.createElement('div');
+    block.className = 'day-block';
+    block.innerHTML = `<div class="day-title">${day}</div>`;
+
+    dayLecs.forEach(l => {
+      const card = document.createElement('div');
+      card.className = 'lecture-card';
+      card.innerHTML = `
+        <div class="time-box">${clockSVG}<div class="t">${l.start}<br>${l.end}</div></div>
+        <div class="lec-info">
+          <div class="lec-name">${esc(l.subject)} <span class="star">✦</span></div>
+          <div class="lec-type">${esc(l.type)}</div>
+        </div>
+        <div class="lec-cat"><span>${esc(l.type)}</span></div>`;
+      block.appendChild(card);
+    });
+    body.appendChild(block);
+  });
+
+  if (!hasAny) body.innerHTML = '<div class="empty-msg">لا توجد محاضرات بعد — أضف محاضرتك الأولى!</div>';
+  renderList();
+}
+
+function renderList() {
+  const list = document.getElementById('lectureList');
+  list.innerHTML = lectures.length ? '' : '<div style="text-align:center;color:#9db4c4;font-size:.85rem;padding:8px;">القائمة فارغة</div>';
+  lectures.forEach(l => {
+    const item = document.createElement('div');
+    item.className = 'lecture-item';
+    item.innerHTML = `<span>${l.day} • ${l.start}-${l.end} • ${esc(l.subject)}</span>
+                      <button class="del" title="حذف" onclick="removeLecture(${l.id})">✕</button>`;
+    list.appendChild(item);
+  });
+}
+
+function addLecture() {
+  const day = document.getElementById('day').value;
+  const start = document.getElementById('timeStart').value.trim();
+  const end = document.getElementById('timeEnd').value.trim();
+  const subject = document.getElementById('subject').value.trim();
+  const type = document.getElementById('type').value.trim();
+  if (!subject) { alert('يرجى إدخال اسم المادة'); return; }
+  if (!start || !end) { alert('يرجى إدخال وقت البداية والنهاية'); return; }
+  lectures.push({id: nextId++, day, start, end, subject, type: type || '—'});
+  document.getElementById('subject').value = '';
+  document.getElementById('type').value = '';
+  render();
+}
+
+function removeLecture(id) { lectures = lectures.filter(l => l.id !== id); render(); }
+
+function clearAll() {
+  if (!lectures.length) return;
+  if (confirm('هل أنت متأكد من مسح جميع المحاضرات؟')) { lectures = []; render(); }
+}
+
+function toMin(t) {
+  const m = t.match(/(\d{1,2}):(\d{2})/);
+  return m ? (+m[1])*60 + (+m[2]) : 0;
+}
+function esc(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+async function downloadImage() {
+  const btn = document.getElementById('dlBtn');
+  btn.disabled = true; btn.textContent = '⏳ جارٍ تجهيز الصورة...';
+  try {
+    const canvas = await html2canvas(document.getElementById('card'), {scale:3, backgroundColor:'#071c2b', useCORS:true});
+    const a = document.createElement('a');
+    a.download = 'جدول-الدوام.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  } catch(e) { alert('حدث خطأ أثناء التصدير، حاول مرة أخرى'); }
+  btn.disabled = false; btn.textContent = '⬇️ تحميل الجدول كصورة للموبايل (PNG)';
+}
+
+document.getElementById('mainTitle').addEventListener('input', render);
+document.getElementById('subTitle').addEventListener('input', render);
+document.getElementById('subject').addEventListener('keydown', e => { if (e.key==='Enter') addLecture(); });
+
+render();
+</script>
+</body>
+</html>
